@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SME Credit Scoring</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label, input {
+            margin: 10px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .output-container {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .output-container p {
+            white-space: pre-wrap;  /* Keeps line breaks */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>SME Credit Scoring API</h1>
+    
+    <div class="form-container">
+        <h3>Enter the Firm's Financials</h3>
+        <form id="scoreForm">
+            <label for="avg_inflow">Avg Inflow:</label>
+            <input type="number" id="avg_inflow" required><br>
+            
+            <label for="avg_outflow">Avg Outflow:</label>
+            <input type="number" id="avg_outflow" required><br>
+
+            <label for="avg_net_cf">Avg Net Cash Flow:</label>
+            <input type="number" id="avg_net_cf" required><br>
+
+            <label for="avg_balance">Avg Balance:</label>
+            <input type="number" id="avg_balance" required><br>
+
+            <label for="sales_mom_mean">Sales MoM Mean:</label>
+            <input type="number" id="sales_mom_mean" required><br>
+
+            <label for="purchases_mom_mean">Purchases MoM Mean:</label>
+            <input type="number" id="purchases_mom_mean" required><br>
+
+            <button type="submit">Get Score</button>
+        </form>
+    </div>
+
+    <div class="output-container" id="output">
+        <h3>Results:</h3>
+        <p id="score"></p>
+        <p id="explanation"></p>
+    </div>
+
+    <script>
+        document.getElementById('scoreForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // Collect form data
+            const data = {
+                avg_inflow: parseFloat(document.getElementById('avg_inflow').value),
+                avg_outflow: parseFloat(document.getElementById('avg_outflow').value),
+                avg_net_cf: parseFloat(document.getElementById('avg_net_cf').value),
+                avg_balance: parseFloat(document.getElementById('avg_balance').value),
+                sales_mom_mean: parseFloat(document.getElementById('sales_mom_mean').value),
+                purchases_mom_mean: parseFloat(document.getElementById('purchases_mom_mean').value)
+            };
+
+            // Call the /score endpoint
+            const scoreResponse = await fetch('http://127.0.0.1:8000/score', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            const scoreResult = await scoreResponse.json();
+
+            // Display the credit score and grade
+            document.getElementById('score').innerText = 
+                `Logistic Regression Score: ${scoreResult.logit_score} | Grade: ${scoreResult.logit_grade}\n` + 
+                `LightGBM Score: ${scoreResult.gbm_score} | Grade: ${scoreResult.gbm_grade}`;
+
+            // Call the /explain endpoint for SHAP explanations
+            const explainResponse = await fetch('http://127.0.0.1:8000/explain', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            const explainResult = await explainResponse.json();
+
+            // Format and display the explanation
+            let explanation = 'Top Features Contributing to Prediction:\n';
+            for (let feature in explainResult) {
+                explanation += `${feature}: ${explainResult[feature].toFixed(4)}\n`;
+            }
+            document.getElementById('explanation').innerText = explanation;
+        });
+    </script>
+
+</body>
+</html>

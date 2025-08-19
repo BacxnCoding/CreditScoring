@@ -1,0 +1,13 @@
+
+    ## Model Summary
+    - Logistic Regression AUC: 0.8590
+    - LightGBM AUC: 0.7314
+
+    ### Logistic Regression
+    - Linear Model trained using Logistic Regression.
+    - AUC: 0.8590
+
+    ### LightGBM
+    - Boosting Model trained using LightGBM.
+    - AUC: 0.7314
+    
